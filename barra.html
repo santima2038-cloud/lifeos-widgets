@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -47,13 +47,13 @@
   <div class="pomo foco" id="pomo">
     <div id="tiempo">25:00</div>
     <button id="play" title="Iniciar / pausar">▶</button>
-    <button id="reset" title="Reiniciar">↺</button>
-    <button id="modo" title="Cambiar foco / pausa">Foco</button>
+    <button id="reset" title="Reset">↺</button>
+    <button id="modo" title="Cambiar foco / pausa">Focus</button>
   </div>
 </div>
 <script>
   // Reloj
-  const fFecha = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'short' });
+  const fFecha = new Intl.DateTimeFormat('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
   function reloj() {
     const d = new Date();
     document.getElementById('hora').textContent =
@@ -73,7 +73,7 @@
     const m1 = new Date(n.getFullYear(), n.getMonth() + 1, 1);
     const a0 = new Date(n.getFullYear(), 0, 1);
     const a1 = new Date(n.getFullYear() + 1, 0, 1);
-    const filas = [['Día', pct(d0, d1, n)], ['Semana', pct(l0, l1, n)], ['Mes', pct(m0, m1, n)], ['Año', pct(a0, a1, n)]];
+    const filas = [['Day', pct(d0, d1, n)], ['Week', pct(l0, l1, n)], ['Month', pct(m0, m1, n)], ['Year', pct(a0, a1, n)]];
     document.getElementById('prog').innerHTML = filas.map(([t, p]) => `
       <div class="p"><div class="top"><b>${t}</b><span>${p.toFixed(0)} %</span></div>
       <div class="barra"><div class="lleno" style="width:${p}%"></div></div></div>`).join('');
@@ -84,7 +84,7 @@
   const tiempo = document.getElementById('tiempo');
   const play = document.getElementById('play');
   const modo = document.getElementById('modo');
-  const MODOS = [['Foco', 25, 'foco'], ['Pausa', 5, 'descanso'], ['Pausa larga', 15, 'descanso']];
+  const MODOS = [['Focus', 25, 'foco'], ['Break', 5, 'descanso'], ['Long break', 15, 'descanso']];
   let iModo = 0, quedan = 25 * 60, timer = null, fin = 0;
   function pintarPomo() {
     tiempo.textContent = `${String(Math.floor(quedan / 60)).padStart(2, '0')}:${String(quedan % 60).padStart(2, '0')}`;
