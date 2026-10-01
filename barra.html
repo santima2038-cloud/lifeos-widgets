@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barra</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { padding: 6px; }
+  .card { max-width: none; display: flex; align-items: center; gap: 22px; padding: 12px 18px; flex-wrap: wrap; }
+  .sep { width: 1px; align-self: stretch; background: var(--line); }
+
+  .reloj { min-width: 120px; }
+  #hora { font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+  #fecha { margin-top: 4px; font-size: 12px; color: var(--muted); }
+  #fecha::first-letter { text-transform: uppercase; }
+
+  .prog { flex: 1; min-width: 220px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; }
+  .p .top { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .p .top b { color: var(--text); font-weight: 600; }
+  .barra { margin-top: 4px; height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .lleno { height: 100%; background: var(--accent); border-radius: 999px; transition: width .6s ease; }
+
+  .pomo { display: flex; align-items: center; gap: 10px; }
+  #tiempo { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 78px; text-align: center; }
+  .pomo.foco #tiempo { color: var(--warn); }
+  .pomo.descanso #tiempo { color: var(--good); }
+  .pomo button { padding: 4px 10px; font-size: 12px; }
+  #modo { font-size: 11px; }
+
+  @media (max-width: 520px) {
+    .card { gap: 14px; }
+    .sep { display: none; }
+    .prog { min-width: 100%; order: 3; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="reloj">
+    <div id="hora">--:--</div>
+    <div id="fecha"></div>
+  </div>
+  <div class="sep"></div>
+  <div class="prog" id="prog"></div>
+  <div class="sep"></div>
+  <div class="pomo foco" id="pomo">
+    <div id="tiempo">25:00</div>
+    <button id="play" title="Iniciar / pausar">▶</button>
+    <button id="reset" title="Reiniciar">↺</button>
+    <button id="modo" title="Cambiar foco / pausa">Foco</button>
+  </div>
+</div>
+<script>
+  // Reloj
+  const fFecha = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'short' });
+  function reloj() {
+    const d = new Date();
+    document.getElementById('hora').textContent =
+      `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    document.getElementById('fecha').textContent = fFecha.format(d);
+  }
+
+  // Progreso
+  function pct(a, b, n) { return Math.min(100, Math.max(0, (n - a) / (b - a) * 100)); }
+  function progreso() {
+    const n = new Date();
+    const d0 = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+    const d1 = new Date(d0); d1.setDate(d1.getDate() + 1);
+    const l0 = new Date(d0); l0.setDate(l0.getDate() - ((l0.getDay() + 6) % 7));
+    const l1 = new Date(l0); l1.setDate(l1.getDate() + 7);
+    const m0 = new Date(n.getFullYear(), n.getMonth(), 1);
+    const m1 = new Date(n.getFullYear(), n.getMonth() + 1, 1);
+    const a0 = new Date(n.getFullYear(), 0, 1);
+    const a1 = new Date(n.getFullYear() + 1, 0, 1);
+    const filas = [['Día', pct(d0, d1, n)], ['Semana', pct(l0, l1, n)], ['Mes', pct(m0, m1, n)], ['Año', pct(a0, a1, n)]];
+    document.getElementById('prog').innerHTML = filas.map(([t, p]) => `
+      <div class="p"><div class="top"><b>${t}</b><span>${p.toFixed(0)} %</span></div>
+      <div class="barra"><div class="lleno" style="width:${p}%"></div></div></div>`).join('');
+  }
+
+  // Pomodoro
+  const pomo = document.getElementById('pomo');
+  const tiempo = document.getElementById('tiempo');
+  const play = document.getElementById('play');
+  const modo = document.getElementById('modo');
+  const MODOS = [['Foco', 25, 'foco'], ['Pausa', 5, 'descanso'], ['Pausa larga', 15, 'descanso']];
+  let iModo = 0, quedan = 25 * 60, timer = null, fin = 0;
+  function pintarPomo() {
+    tiempo.textContent = `${String(Math.floor(quedan / 60)).padStart(2, '0')}:${String(quedan % 60).padStart(2, '0')}`;
+  }
+  function sonar() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, .35, .7].forEach(t => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(.25, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + t + .3);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + .3);
+      });
+    } catch (e) {}
+  }
+  function parar() { clearInterval(timer); timer = null; play.textContent = '▶'; }
+  function correr() {
+    fin = Date.now() + quedan * 1000;
+    timer = setInterval(() => {
+      quedan = Math.max(0, Math.round((fin - Date.now()) / 1000));
+      pintarPomo();
+      if (quedan === 0) { parar(); sonar(); }
+    }, 250);
+    play.textContent = '❚❚';
+  }
+  play.onclick = () => { if (timer) parar(); else { if (quedan === 0) quedan = MODOS[iModo][1] * 60; correr(); } };
+  document.getElementById('reset').onclick = () => { parar(); quedan = MODOS[iModo][1] * 60; pintarPomo(); };
+  modo.onclick = () => {
+    parar();
+    iModo = (iModo + 1) % MODOS.length;
+    const [nombre, min, tipo] = MODOS[iModo];
+    modo.textContent = nombre;
+    pomo.className = `pomo ${tipo}`;
+    quedan = min * 60;
+    pintarPomo();
+  };
+
+  reloj(); progreso(); pintarPomo();
+  setInterval(reloj, 1000);
+  setInterval(progreso, 60000);
+</script>
+</body>
+</html>
