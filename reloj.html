@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reloj</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .card { text-align: center; }
+  #hora { font-size: clamp(40px, 16vw, 64px); font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  #seg { font-size: .4em; color: var(--muted); font-weight: 500; }
+  #fecha { margin-top: 6px; color: var(--muted); font-size: 14px; }
+  #fecha::first-letter { text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="hora">--:--<span id="seg"></span></div>
+  <div id="fecha"></div>
+</div>
+<script>
+  const hora = document.getElementById('hora');
+  const fecha = document.getElementById('fecha');
+  const fFecha = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+  function tick() {
+    const d = new Date();
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    hora.innerHTML = `${h}:${m}<span id="seg"> ${s}</span>`;
+    fecha.textContent = fFecha.format(d);
+  }
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>

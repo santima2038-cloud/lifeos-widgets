@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuenta regresiva</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .card { text-align: center; }
+  #que { margin-top: 4px; font-size: 15px; font-weight: 600; }
+  .nums { display: flex; justify-content: center; gap: 18px; margin-top: 12px; }
+  .nums div { min-width: 48px; }
+  .nums b { display: block; font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .nums span { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="label">Faltan</div>
+  <div id="que"></div>
+  <div class="nums">
+    <div><b id="d">0</b><span>días</span></div>
+    <div><b id="h">0</b><span>horas</span></div>
+    <div><b id="m">0</b><span>min</span></div>
+  </div>
+</div>
+<script>
+  // Uso: cuenta.html?hasta=2026-12-31&que=Fin%20de%20a%C3%B1o
+  const p = new URLSearchParams(location.search);
+  const hoy = new Date();
+  const hasta = p.get('hasta') ? new Date(p.get('hasta') + 'T00:00:00') : new Date(hoy.getFullYear() + 1, 0, 1);
+  document.getElementById('que').textContent = p.get('que') || 'Fin de año';
+  function tick() {
+    const ms = Math.max(0, hasta - new Date());
+    document.getElementById('d').textContent = Math.floor(ms / 864e5);
+    document.getElementById('h').textContent = Math.floor(ms / 36e5) % 24;
+    document.getElementById('m').textContent = Math.floor(ms / 6e4) % 60;
+  }
+  tick();
+  setInterval(tick, 30000);
+</script>
+</body>
+</html>
